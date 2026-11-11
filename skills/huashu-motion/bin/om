@@ -1,5 +1,8 @@
 #!/bin/sh
-# Runs the huashu-motion CLI shipped next to this skill; falls back to the npm package.
-DIR="$(cd "$(dirname "$0")" && pwd -P)"
-if [ -f "$DIR/../../../cli/om.js" ]; then exec node "$DIR/../../../cli/om.js" "$@"; fi
-exec npx --yes huashu-motion "$@"
+# Runs the huashu-motion CLI of the repo this skill lives in. Node resolves the real path, so a skill
+# linked into ~/.claude/skills (a symlink, or a Windows junction, which `pwd -P` in Git Bash does not
+# follow) still finds its repo. Installed on its own (`npx skills add`), it runs this fork from GitHub,
+# never the upstream npm package, which lacks the Vietnamese support.
+CLI="$(node -e 'const fs = require("fs"), p = require("path"); const f = p.resolve(p.dirname(fs.realpathSync(process.argv[1])), "../../../cli/om.js"); if (fs.existsSync(f)) process.stdout.write(f.replace(/\\/g, "/"))' "$0" 2>/dev/null)"
+if [ -n "$CLI" ]; then exec node "$CLI" "$@"; fi
+exec npx --yes github:mrtinhnguyen/huashu-motion "$@"
